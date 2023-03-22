@@ -180,7 +180,7 @@ def check(f, h) -> bool:
         return False
 
 def mono_solver(chessboard: ChessBoard, output) :
-    """ Actual, recurrent solving function - monoprocess """
+    """ Actual, recurrent solving procedure - monoprocess """
     try :
         col = chessboard.queens.index(None) + 1
     except ValueError :
@@ -192,7 +192,7 @@ def mono_solver(chessboard: ChessBoard, output) :
             chessboard.place_queen(f)
 
 def multi_solver(chessboard: ChessBoard, output) :
-    """ Actual, recurrent solving function - multiprocess """
+    """ Actual, recurrent solving procedure - multiprocess """
     try :
         col = chessboard.queens.index(None) + 1
     except ValueError :
