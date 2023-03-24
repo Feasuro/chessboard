@@ -1,34 +1,46 @@
 #!/usr/bin/env python
 
+from concurrent.futures import ProcessPoolExecutor
+import sys
 import time
 
-
-def promising(col: int) -> bool :
-    for c in range(col) :
-        if queens[col] == queens[c] or abs(queens[col] - queens[c]) == col - c :
-            return False
+def valid(col: int) -> bool :
+    for c in range(dim) :
+        if queens[c] and c != col :
+            if queens[col] == queens[c] or abs(queens[col] - queens[c]) == abs(col - c) :
+                return False
     return True
 
-def place_queens(col: int) :
-    global rozw
-    if promising(col) :
-        if col == dim - 1 :
-            rozw += 1
+def place_queens(col) :
+    if valid(col) :
+        try :
+            col = queens.index(None)
+        except ValueError :
             print(queens)
         else :
             for row in range(1, dim + 1) :
-                queens[col + 1] = row
-                place_queens(col + 1)
+                queens[col] = row
+                place_queens(col)
+            queens[col] = None
+
+"""i = 1
+queens = []
+
+for i in range(1, len(sys.argv)) :
+    queens.append(int(sys.argv[i]))
+
+try :
+    place_queens( queens.index(None) )
+except ValueError :
+    print(queens)"""
 
 if __name__ == '__main__' :
     dim = int(input("Provide chessboard's dimension: "))
-    queens = [0] * dim
-    rozw = 0
+    queens = [None] * dim
 
     start = time.perf_counter()
-    place_queens(-1)
+    place_queens( queens.index(None) )
     runtime = time.perf_counter() - start
 
     print("Chessboard's dimension:", dim)
-    print('Number of solutions found:', rozw)
     print('Elapsed time:', runtime)

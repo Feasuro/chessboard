@@ -4,9 +4,58 @@ import sys
 import time
 from concurrent.futures import ProcessPoolExecutor
 from copy import deepcopy
+from collections.abc import MutableSequence
+
+class QueenCoord :
+    def __get__(self, x, dim=0) :
+        pass
+
+    def __set__(self, x, dim) :
+        if 0 <= int(x) < dim :
+            return True
+        return False
 
 
-class ChessBoard :
+def convert_args(queens: list | None, dim: int) -> list | None:
+    """ Converts queens arrangement provided from commandline, to proper format. """
+    if queens is None :
+        return None
+    result = []
+    for i in queens :
+        if i == 0 :
+            result.append(None)
+        elif i > dim :
+            raise ValueError(f"Row number {i} out of range, cannot be greater than dim={dim}")
+        elif i < 0 :
+            raise ValueError(f"Row number cannot be negative, but {i} was given.")
+        else :
+            result.append(i)
+    return result
+
+class Queens(MutableSequence) :
+    def __init__(self, iterable) :
+        self.data = [int(item) for item in iterable]
+
+    def __setitem__(self, index, item) :
+        super().__setitem__(index, int(item))
+
+    def __getitem__(self, index) :
+        print(item)
+
+    def __delitem__(self, index) :
+        super().__setitem__(index, None)
+        
+    def __len__(self, index, item) :
+        super().__len__()
+    
+    def insert(self, index, item) :
+        pass
+
+    @property
+    def dim(self) :
+        return len(self)
+
+class ChessBoard :       
     """ Class implements the N Queens problem.
 
     Values of the 'board' attribute say if the field is:
