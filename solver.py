@@ -4,23 +4,23 @@ from concurrent.futures import ProcessPoolExecutor
 import sys
 import time
 
-def valid(col: int) -> bool :
-    for c in range(dim) :
-        if queens[c] and c != col :
+def valid(queens: list, col: int) -> bool :
+    for c in range(len(queens)) :
+        if queens[c] and queens[col] and c != col :
             if queens[col] == queens[c] or abs(queens[col] - queens[c]) == abs(col - c) :
                 return False
     return True
 
-def place_queens(col) :
-    if valid(col) :
+def place_queens(queens: list, col: int) :
+    if valid(queens, col) :
         try :
             col = queens.index(None)
         except ValueError :
             print(queens)
         else :
-            for row in range(1, dim + 1) :
+            for row in range(1, len(queens) + 1) :
                 queens[col] = row
-                place_queens(col)
+                place_queens(queens, col)
             queens[col] = None
 
 """i = 1
@@ -39,7 +39,7 @@ if __name__ == '__main__' :
     queens = [None] * dim
 
     start = time.perf_counter()
-    place_queens( queens.index(None) )
+    place_queens( queens, queens.index(None) )
     runtime = time.perf_counter() - start
 
     print("Chessboard's dimension:", dim)
