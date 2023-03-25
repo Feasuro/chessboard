@@ -13,7 +13,7 @@ from PyQt6.QtWidgets import (QAbstractButton, QApplication, QCheckBox,
                              QListWidget, QListWidgetItem, QMainWindow,
                              QMessageBox, QSizePolicy, QToolBar, QWidget)
 
-from .chessboard import ChessBoard
+from chessboard import ChessBoard
 
 
 class Solution(QListWidgetItem):

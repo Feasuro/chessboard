@@ -5,15 +5,7 @@ import time
 from concurrent.futures import ProcessPoolExecutor
 from copy import deepcopy
 from collections.abc import MutableSequence
-
-class QueenCoord :
-    def __get__(self, x, dim=0) :
-        pass
-
-    def __set__(self, x, dim) :
-        if 0 <= int(x) < dim :
-            return True
-        return False
+import solver
 
 
 def convert_args(queens: list | None, dim: int) -> list | None:
@@ -269,7 +261,34 @@ def convert_args(queens: list | None, dim: int) -> list | None:
             result.append(i)
     return result
 
-    
+def dimension(x) :
+    if int(x) >= 0 :
+        return int(x)
+    else :
+        raise ValueError("Chessboard's dimension can't be negative!")
+
+def coordinate(x) :
+    if x in ['N', 'n', 'None', None] :
+        return None
+    elif int(x) == 0 :
+        return None
+    elif int(x) > 0 :
+        return int(x)
+    else :
+        raise ValueError(f"Invalid coordinate value {x}")
+
+def input_check(dim, queens) :
+    queens += [None] * (dim - len(queens))
+    if len(queens) > dim :
+        raise ValueError(f"Too many columns given for dimension={dim}")
+    for i in range(len(queens)) :
+        if isinstance(queens[i], int) and queens[i] > dim :
+            raise ValueError(f"Coordinate {queens[i]} exceeds dimension={dim}")
+        elif not solver.valid(queens, i) :
+            raise ValueError(f"Initial setup is invalid. Queens cannot attack each other")
+    return True
+
+
 if __name__ == '__main__' :
     from argparse import ArgumentParser
     
@@ -280,16 +299,24 @@ if __name__ == '__main__' :
         or provide dimension of chessboard to solve.
         Use help(ChessBoard) for help in interactive mode.
         """)
+    parser.add_argument('-d', '--dim', type=dimension, help="Chessboard's dimension.")
+    parser.add_argument('-q', '--queens', nargs='*', type=coordinate, default=[], help='Provide initial arrangement of queens on the chessboard: c1 c2 ... cn, where c1 indicates position in first column. When column is empty use 0.')
     parser.add_argument('-v', '--verbose', action='store_true', help='Produce verbose output.')
     parser.add_argument('-m', '--multi', action='store_true', help='Toggle multiprocessing.')
-    parser.add_argument('-d', '--dim', type=int, help="Chessboard's dimension.")
-    parser.add_argument('-q', '--queens', nargs='*', type=int, help='Provide initial arrangement of queens on the chessboard: c1 c2 ... cn, where c1 indicates position in first column. When column is empty use 0.')
     args = parser.parse_args()
 
-
-    if isinstance(args.dim, int) :
-
-        ChessBoard(args.dim, convert_args(args.queens, args.dim)).solutions(args.multi, args.verbose)
+    if isinstance(args.dim, int) and input_check(args.dim, args.queens) :
+        print(args)
+        start = time.perf_counter()
+        solver.place_queens( args.queens, args.queens.index(None) ) #empty list or full list
+        runtime = time.perf_counter() - start
 
     else :
-        parser.print_help()
+        while True :
+            try :
+                args.dim = int(input("Provide chessboard's dimension: "))
+                if args.dim < 0 :
+                    raise ValueError
+                break
+            except ValueError :
+                print("Provide a non-negative integer!")
