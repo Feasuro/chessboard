@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 
 import sys
-import time
 from concurrent.futures import ProcessPoolExecutor
 from copy import deepcopy
-from collections.abc import MutableSequence
+from timer import Timer
 import solver
 
 
-class ChessBoard :       
+class ChessBoard :
     """ Class implements the N Queens problem.
 
     Values of the 'board' attribute say if the field is:
@@ -19,30 +18,29 @@ class ChessBoard :
     by placing/removing queens on the chessboard
     or print result in human readable format. """
 
-    def __init__(self, N: int, queens=None) :
-        """ Pass chessboard's dimension as argument 
-        
-        example: B=ChessBoard(8)
-        creates standard 8x8 chessboard named B"""
-        self._dim = int(N) if N > 0 else 0
+    def __init__(self, dim: int, queens=None) :
+        """ Gets chessboard's dimension and populates initial setup if one is given. """
+        self._dim = dimension(dim)
         self.board = dict( ((n, k), '_') for n in range(1, self.dim+1) for k in range(1, self.dim+1) )
-        self.queens = [None] * self.dim
-        if queens is not None :
-            self.from_list(queens)
+        if queens is None :
+            self.queens = [None] * self.dim
+        elif input_check(self.dim, queens) :
+            self.queens = queens
+            for field in enumerate(self.queens, start=1) :
+                if field[1] is None :
+                    continue
+                self.place_queen(field)
 
     @property
     def dim(self) :
-        """ Chessboard's dimension """
+        """ Chessboard's dimension. """
         return self._dim
 
     def __bool__(self) -> bool:
         return self.dim != 0
 
     def __str__(self) -> str:
-        """ Use print() to view chessboard on the screen. 
-        
-        example: print(B)
-        view chessboard B"""
+        """ Use print() to view chessboard on the screen. """
         # Upper line
         result = '    '
         for n in range(self.dim) :
@@ -61,22 +59,23 @@ class ChessBoard :
         result += '\n'
         return result
 
-    def clean(self) :
-        """ Cleans the chessboard empty 
-        
-        example: B.clean()"""
+    def clear(self) -> None:
+        """ Cleans the chessboard empty """
         for f in self.board :
             self.board[f] = '_'
         self.queens = [None] * self.dim
-        return 0
 
-    def get_field(self) :
-        """ Looks for an empty field to place a Queen. """
-        try :
-            return min(f for f in self.board if self.board[f] == '_')
-        except ValueError :
-            print('No more unthreatened fields on the chessboard!')
-            return None
+    @staticmethod
+    def field_check(f, h) -> bool:
+        """ Checks if queens on fields f and h are attacking each other. """
+        if f[0] == h[0] :
+            return True
+        elif f[1] == h[1] :
+            return True
+        elif abs(f[1] - h[1]) == abs(f[0] - h[0]) :
+            return True
+        else :
+            return False
 
     def get_fields(self, col=None) :
         """ Returns empty fields up to given column, all empty fields by default. """
@@ -84,26 +83,23 @@ class ChessBoard :
         return (f for f in self.board if f[0] <= col and self.board[f] == '_')
 
     def place_queen(self, field) :
-        """ Place or remove a queen from given field. Marks appropriate fields as threatened. 
-        
-        example: B.place_queen((2,3))
-        puts (or deletes) queen in 2'nd column and 3'rd row of the chessboard B"""
+        """ Place or remove a queen from given field. Marks appropriate fields as threatened. """
         if field in self.board :
             if self.board[field] == '_' :
                 self.queens[field[0] - 1] = field[1]
                 self.board[field] = 'Q'
                 for f in self.board :
-                    if self.board[f] == '_' and check(f, field) :
+                    if self.board[f] == '_' and self.field_check(f, field) :
                         self.board[f] = '+'
                 return True
             elif self.board[field] == 'Q' :
                 self.queens[field[0] - 1] = None
                 self.board[field] = '_'
                 for f in self.board :
-                    if self.board[f] == '+' and check(f, field) :
+                    if self.board[f] == '+' and self.field_check(f, field) :
                         self.board[f] = '_'
                         for i in range(self.dim) :
-                            if self.queens[i] != None and check(f, (i+1, self.queens[i])) :
+                            if self.queens[i] != None and self.field_check(f, (i+1, self.queens[i])) :
                                 self.board[f] = '+'
                                 break
                 return True
@@ -112,14 +108,6 @@ class ChessBoard :
                 return False
         else :
             raise ValueError('Incorrect field coordinates - out of range?')
-
-    def from_list(self, queens):
-        """ Populates board's initial values when queens arrangement is given to the constructor """
-        for field in enumerate(queens, start=1) :
-            if field[1] is None :
-                continue
-            if not self.place_queen(field) :
-                raise ValueError('Incorrect queens arrangement provided - attacking each other!)')
 
     def solve(self) :
         """ Yields all possible solutions """
@@ -149,15 +137,9 @@ class ChessBoard :
         example3: B.solutions(multi=True)
         Takes advantage of multiprocess concurrent calculations """
 
-        if verbose :
-            output = print
-        else :
-            output = alt_print
+        output = print if verbose else alt_print
 
-        if multi :
-            solver = multi_solver
-        else :
-            solver = mono_solver
+        solver = multi_solver if multi else mono_solver
 
         start = time.perf_counter()
         solver(self, output)
@@ -168,17 +150,6 @@ class ChessBoard :
 def alt_print(chessboard: ChessBoard) :
     """ Alternative, less verbose, printing method. """
     print(chessboard.queens)
-
-def check(f, h) -> bool:
-    """ Checks if queens on fields f and h are attacking each other. """
-    if f[0] == h[0] :
-        return True
-    elif f[1] == h[1] :
-        return True
-    elif abs(f[1] - h[1]) == abs(f[0] - h[0]) :
-        return True
-    else :
-        return False
 
 def mono_solver(chessboard: ChessBoard, output) :
     """ Actual, recurrent solving procedure - monoprocess """
@@ -205,29 +176,15 @@ def multi_solver(chessboard: ChessBoard, output) :
                 executor.submit(mono_solver, deepcopy(chessboard), output)
                 chessboard.place_queen(f)
 
-def convert_args(queens: list | None, dim: int) -> list | None:
-    """ Converts queens arrangement provided from commandline, to proper format. """
-    if queens is None :
-        return None
-    result = []
-    for i in queens :
-        if i == 0 :
-            result.append(None)
-        elif i > dim :
-            raise ValueError(f"Row number {i} out of range, cannot be greater than dim={dim}")
-        elif i < 0 :
-            raise ValueError(f"Row number cannot be negative, but {i} was given.")
-        else :
-            result.append(i)
-    return result
-
 def dimension(x) :
+    """ Turns input into proper dimension or throws an error. """
     if int(x) >= 0 :
         return int(x)
     else :
         raise ValueError("Chessboard's dimension can't be negative!")
 
 def coordinate(x) :
+    """ Turns input into proper coordinate or throws an error. """
     if x in ['N', 'n', 'None', None] :
         return None
     elif int(x) == 0 :
@@ -237,7 +194,8 @@ def coordinate(x) :
     else :
         raise ValueError(f"Invalid coordinate value {x}")
 
-def input_check(dim, queens) :
+def input_check(dim, queens) -> bool :
+    """ Checks if provided queens setup is correct given chessboard's dimension. """
     queens += [None] * (dim - len(queens))
     if len(queens) > dim :
         raise ValueError(f"Too many columns given for dimension={dim}")
@@ -248,15 +206,8 @@ def input_check(dim, queens) :
             raise ValueError(f"Initial setup is invalid. Queens cannot attack each other")
     return True
 
-def get_command(x) :
-    if (y := x.upper()) in ['N', 'C', 'S', 'V', 'M', 'E'] :
-        return y
-    elif len(y := x.split()) == 2 :
-        return (int(y[0]), int(y[1]))
-    else :
-        raise ValueError("Command not recognized")
-
-def main() :
+def show() :
+    """ Prints help message and current chessboard. """
     print("N - new chessboard")
     print("C - clear chessboard")
     print("x y - place/remove queen on field (x, y)")
@@ -264,11 +215,43 @@ def main() :
     print("m - toggle multiprocessing")
     print("v - toggle verbose output")
     print("E - exit program")
-    
+    print(args.myboard)
+
+def get_command(x) :
+    """ Handles user input. """
+    if (y := x.upper()) in ['N', 'C', 'S', 'V', 'M', 'E'] :
+        return y
+    elif len(y := x.split()) == 2 :
+        return (int(y[0]), int(y[1]))
+    else :
+        raise ValueError("Command not recognized")
+
+def command_new() -> None :
+    """ Creates new chessboard with user provided dimension. """
     while True :
         try :
+            args.dim = dimension(input("Provide chessboard's dimension: "))
+            break
+        except ValueError :
+            print("Provide a non-negative integer!")
+    args.myboard = ChessBoard(args.dim)
+
+def command_solve() -> None :
+    """ Prints solutions """
+    output_method = args.myboard if args.verbose else args.myboard.queens
+    solver_method = solver.multi_solve if args.multi else solver.basic_solve
+    with Timer() as timer :
+        solver_method( args.myboard.queens )
+    print(f"Elapsed time: {timer.elapsed} seconds")
+
+def main() -> None :
+    """ The program's main loop. """
+    args.myboard = ChessBoard(0)
+    while True :
+        show()
+        print(args, type(args)) # debug
+        try :
             command = get_command(input())
-            print(args)
         except ValueError :
             print("Command not recognized")
         else :
@@ -280,13 +263,13 @@ def main() :
                 case 'M' :
                     args.multi = not args.multi
                 case 'C' :
-                    print("Clear")
+                    args.myboard.clear()
                 case 'N' :
-                    print("New")
+                    command_new()
                 case 'S' :
-                    print("Solve")
+                    command_solve()
                 case _ :
-                    print("Place a queen")
+                    args.myboard.place_queen(command)
         
 
 if __name__ == '__main__' :
@@ -295,9 +278,8 @@ if __name__ == '__main__' :
     parser = ArgumentParser(
             description='Calculate solutions of the n-queens problem.',
             epilog="""
-        Either use interactive mode (python -i chessboard.py),
-        or provide dimension of chessboard to solve.
-        Use help(ChessBoard) for help in interactive mode.
+        Either use interactive mode (without commandline arguments),
+        or provide (at least) dimension of chessboard to solve.
         """)
     parser.add_argument('-d', '--dim', type=dimension, help="Chessboard's dimension.")
     parser.add_argument('-q', '--queens', nargs='*', type=coordinate, default=[], help="Initial arrangement of queens on the chessboard: c1 c2 ... cn, where cn is row number in n'th column. For empty column use N or 0.")
@@ -306,17 +288,8 @@ if __name__ == '__main__' :
     args = parser.parse_args()
 
     if isinstance(args.dim, int) and input_check(args.dim, args.queens) :
-        print(args)
-        start = time.perf_counter()
-        solver.place_queens( args.queens, args.queens.index(None) ) #empty list or full list
-        runtime = time.perf_counter() - start
+        args.myboard = ChessBoard(args.dim, args.queens)
+        command_solve()
 
     else :
         main()
-        """while True :
-            try :
-                args.dim = dimension(input("Provide chessboard's dimension: "))
-                print(args, type(args))
-                break
-            except ValueError :
-                print("Provide a non-negative integer!")"""
