@@ -4,9 +4,9 @@ import sys
 from concurrent.futures import ProcessPoolExecutor
 from copy import deepcopy
 from timer import Timer
-import solver
 
-
+####################################
+# Section: chessboard implementation
 class ChessBoard :
     """ Class implements the N Queens problem.
 
@@ -14,7 +14,7 @@ class ChessBoard :
     'Q' - occupied,
     '+' - threatened,
     '_' - empty.
-    Methods (see examples below) allow user to manually look for solutions
+    Methods allow user to manually look for solutions
     by placing/removing queens on the chessboard
     or print result in human readable format. """
 
@@ -32,14 +32,14 @@ class ChessBoard :
                 self.place_queen(field)
 
     @property
-    def dim(self) -> int:
+    def dim(self) -> int :
         """ Chessboard's dimension. """
         return self._dim
 
-    def __bool__(self) -> bool:
+    def __bool__(self) -> bool :
         return self.dim != 0
 
-    def __str__(self) -> str:
+    def __str__(self) -> str :
         """ Use print() to view chessboard on the screen. """
         # Upper line
         result = '    '
@@ -59,15 +59,15 @@ class ChessBoard :
         result += '\n'
         return result
 
-    def clear(self) -> bool:
-        """ Cleans the chessboard empty """
+    def clear(self) -> bool :
+        """ Cleans the chessboard empty. """
         for f in self.board :
             self.board[f] = '_'
         self.queens = [None] * self.dim
         return True
 
     @staticmethod
-    def field_check(f, h) -> bool:
+    def field_check(f, h) -> bool :
         """ Checks if queens on fields f and h are attacking each other. """
         if f[0] == h[0] :
             return True
@@ -83,7 +83,7 @@ class ChessBoard :
         if col is None : col = self.dim
         return (f for f in self.board if f[0] <= col and self.board[f] == '_')
 
-    def place_queen(self, field) -> bool:
+    def place_queen(self, field) -> bool :
         """ Place or remove a queen from given field. Marks appropriate fields as threatened. """
         if field in self.board :
             if self.board[field] == '_' :
@@ -112,72 +112,80 @@ class ChessBoard :
             return False
 
     def solve(self) :
-        """ Yields all possible solutions """
+        """ Yields all possible solutions. """
         try :
             col = self.queens.index(None) + 1
         except ValueError :
-            yield self.queens
+            yield self
         else :
             for f in self.get_fields(col) :
                 self.place_queen(f)
                 yield from self.solve()
                 self.place_queen(f)
 
-    def solutions(self, multi=False, verbose=False) :
-        """ Wrapper method for printing solutions.
+#############################
+# Section: solving algorithms
+def valid(queens: list, col: int) -> bool :
+    """ Checks if in column 'col' queen is placed properly. """
+    for c in range(len(queens)) :
+        if queens[c] and queens[col] and c != col :
+            if queens[col] == queens[c] or abs(queens[col] - queens[c]) == abs(col - c) :
+                return False
+    return True
 
-        This method picks solver fuction and output format:
-        if multi=True uses multiprocessing.
-        if verbose=True prints human readable visualisation of solutions
-    
-        example1: B.solutions()
-        Prints all solutions for chessboard B
+def basic_solve(queens: list, col=0) -> None :
+    """ Recurrently tries to fill list with queens. """
+    if valid(queens, col) :
+        try :
+            col = queens.index(None)
+        except ValueError :
+            print(queens)
+        else :
+            for row in range(1, len(queens) + 1) :
+                queens[col] = row
+                basic_solve(queens, col)
+            queens[col] = None
 
-        example2: B.solutions(verbose=True)
-        The same as above but uses human readable output
-        
-        example3: B.solutions(multi=True)
-        Takes advantage of multiprocess concurrent calculations """
+def multi_solve(queens: list, col=0) -> None :
+    """ Wrapper that distributes calculations between processes. """
+    try :
+        col = queens.index(None)
+    except ValueError :
+        print(queens)
+    else :
+        with ProcessPoolExecutor() as executor :
+            for row in range(1, len(queens) + 1) :
+                queens[col] = row
+                executor.submit(basic_solve, list(queens), col)
+            queens[col] = None
 
-        output = print if verbose else alt_print
-
-        solver = multi_solver if multi else mono_solver
-
-        start = time.perf_counter()
-        solver(self, output)
-        stop = time.perf_counter()
-        print('Elapsed time:', stop - start, 'seconds', file=sys.stderr)
-
-
-def alt_print(chessboard: ChessBoard) :
-    """ Alternative, less verbose, printing method. """
-    print(chessboard.queens)
-
-def mono_solver(chessboard: ChessBoard, output) :
-    """ Actual, recurrent solving procedure - monoprocess """
+def verbose_solve(chessboard: ChessBoard) -> None :
+    """ Verbose recurrent solver, it operates on the whole board structure. """
     try :
         col = chessboard.queens.index(None) + 1
     except ValueError :
-        output(chessboard)
+        print(chessboard)
     else :
         for f in chessboard.get_fields(col) :
             chessboard.place_queen(f)
-            mono_solver(chessboard, output)
+            verbose_solve(chessboard)
             chessboard.place_queen(f)
 
-def multi_solver(chessboard: ChessBoard, output) :
-    """ Actual, recurrent solving procedure - multiprocess """
+def multiverbose_solve(chessboard: ChessBoard) -> None :
+    """ Multiprocess wraper for verbose algorithm. """
     try :
         col = chessboard.queens.index(None) + 1
     except ValueError :
-        output(chessboard)
+        print(chessboard)
     else :
         with ProcessPoolExecutor() as executor :
             for f in chessboard.get_fields(col) :
                 chessboard.place_queen(f)
-                executor.submit(mono_solver, deepcopy(chessboard), output)
+                executor.submit(verbose_solve, deepcopy(chessboard))
                 chessboard.place_queen(f)
 
+############################
+# Section: user input checks
 def dimension(x) :
     """ Turns input into proper dimension or throws an error. """
     if int(x) >= 0 :
@@ -204,7 +212,7 @@ def input_check(dim, queens) -> bool :
     for i in range(len(queens)) :
         if isinstance(queens[i], int) and queens[i] > dim :
             raise ValueError(f"Coordinate {queens[i]} exceeds dimension={dim}")
-        elif not solver.valid(queens, i) :
+        elif not valid(queens, i) :
             raise ValueError(f"Initial setup is invalid. Queens cannot attack each other")
     return True
 
@@ -217,6 +225,8 @@ def get_command(x) :
     else :
         raise ValueError("Command not recognized")
 
+##########################################
+# Section: interactive mode implementation
 def command_new() -> None :
     """ Creates new chessboard with user provided dimension. """
     while True :
@@ -228,12 +238,17 @@ def command_new() -> None :
     args.myboard = ChessBoard(args.dim)
 
 def command_solve() -> None :
-    """ Prints solutions """
-    #output_method = args.myboard if args.verbose else args.myboard.queens
-    solver_method = solver.multi_solve if args.multi else solver.basic_solve
+    """ Picks an algorithm and prints time. """
+    if args.verbose :
+        solver_method = multiverbose_solve if args.multi else verbose_solve
+        output_method = args.myboard
+    else :
+        solver_method = multi_solve if args.multi else basic_solve
+        output_method = args.myboard.queens
+
     with Timer() as timer :
-        solver_method( args.myboard.queens )
-    print(f"Elapsed time: {timer.elapsed} seconds")
+        solver_method( output_method )
+    print(f"Elapsed time: {timer.elapsed} seconds", file=sys.stderr)
 
 def show() -> None :
     """ Prints help message and current chessboard. """

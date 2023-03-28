@@ -7,6 +7,5 @@ Simple program that solves the [N-queens problem](https://en.wikipedia.org/wiki/
 * Shows how to complete user given queens arrangement to solve the puzzle.
 * Optionally uses multiprocess solving algorithm and lets user compare working times.
 ### It involves:
-* solving algorithm module
 * CLI module
 * GUI module in qt
