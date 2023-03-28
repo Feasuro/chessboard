@@ -32,7 +32,7 @@ class ChessBoard :
                 self.place_queen(field)
 
     @property
-    def dim(self) :
+    def dim(self) -> int:
         """ Chessboard's dimension. """
         return self._dim
 
@@ -59,11 +59,12 @@ class ChessBoard :
         result += '\n'
         return result
 
-    def clear(self) -> None:
+    def clear(self) -> bool:
         """ Cleans the chessboard empty """
         for f in self.board :
             self.board[f] = '_'
         self.queens = [None] * self.dim
+        return True
 
     @staticmethod
     def field_check(f, h) -> bool:
@@ -82,7 +83,7 @@ class ChessBoard :
         if col is None : col = self.dim
         return (f for f in self.board if f[0] <= col and self.board[f] == '_')
 
-    def place_queen(self, field) :
+    def place_queen(self, field) -> bool:
         """ Place or remove a queen from given field. Marks appropriate fields as threatened. """
         if field in self.board :
             if self.board[field] == '_' :
@@ -107,7 +108,8 @@ class ChessBoard :
                 print('Cannot place Queen here!')
                 return False
         else :
-            raise ValueError('Incorrect field coordinates - out of range?')
+            print('Incorrect field coordinates - out of range.')
+            return False
 
     def solve(self) :
         """ Yields all possible solutions """
@@ -206,17 +208,6 @@ def input_check(dim, queens) -> bool :
             raise ValueError(f"Initial setup is invalid. Queens cannot attack each other")
     return True
 
-def show() :
-    """ Prints help message and current chessboard. """
-    print("N - new chessboard")
-    print("C - clear chessboard")
-    print("x y - place/remove queen on field (x, y)")
-    print("S - print solutions")
-    print("m - toggle multiprocessing")
-    print("v - toggle verbose output")
-    print("E - exit program")
-    print(args.myboard)
-
 def get_command(x) :
     """ Handles user input. """
     if (y := x.upper()) in ['N', 'C', 'S', 'V', 'M', 'E'] :
@@ -238,18 +229,33 @@ def command_new() -> None :
 
 def command_solve() -> None :
     """ Prints solutions """
-    output_method = args.myboard if args.verbose else args.myboard.queens
+    #output_method = args.myboard if args.verbose else args.myboard.queens
     solver_method = solver.multi_solve if args.multi else solver.basic_solve
     with Timer() as timer :
         solver_method( args.myboard.queens )
     print(f"Elapsed time: {timer.elapsed} seconds")
 
+def show() -> None :
+    """ Prints help message and current chessboard. """
+    print("\033c", end='')
+    print("############################################")
+    print(f"# multiprocess={args.multi}, verbose={args.verbose}")
+    print("############################################")
+    print("N - new chessboard")
+    print("C - clear chessboard")
+    print("x y - place/remove queen on field (x, y)")
+    print("S - print solutions")
+    print("m - toggle multiprocessing")
+    print("v - toggle verbose output (slower)")
+    print("E - exit program")
+    print(args.myboard)
+    print("Enter command:")
+
 def main() -> None :
     """ The program's main loop. """
     args.myboard = ChessBoard(0)
+    show()
     while True :
-        show()
-        print(args, type(args)) # debug
         try :
             command = get_command(input())
         except ValueError :
@@ -260,16 +266,24 @@ def main() -> None :
                     break
                 case 'V' :
                     args.verbose = not args.verbose
+                    show()
                 case 'M' :
                     args.multi = not args.multi
+                    show()
                 case 'C' :
                     args.myboard.clear()
+                    show()
                 case 'N' :
                     command_new()
+                    show()
                 case 'S' :
                     command_solve()
+                    print("Enter command:")
                 case _ :
-                    args.myboard.place_queen(command)
+                    if args.myboard.place_queen(command) :
+                        show()
+                    else:
+                        print("Enter command:")
         
 
 if __name__ == '__main__' :
