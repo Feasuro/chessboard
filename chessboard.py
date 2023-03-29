@@ -10,6 +10,7 @@ from timer import Timer
 class Terminal :
     WHITE = '\033[97m'
     GREEN = '\033[92m'
+    DARKGREEN = '\033[32m'
     RED = '\033[91m'
     ENDC = '\033[0m'
     CLEAR = '\033c'
@@ -263,9 +264,9 @@ def command_solve() -> None :
 def show() -> None :
     """ Prints help message and current chessboard. """
     print(Terminal.CLEAR, end='')
-    print(f"{TermC.DARKGREEN.value}############################################")
-    print(f"#{TermC.ENDC.value} multiprocess={args.multi}, verbose={args.verbose}")
-    print(f"{TermC.DARKGREEN.value}############################################{TermC.ENDC.value}")
+    print(f"{Terminal.DARKGREEN}############################################")
+    print(f"#{Terminal.ENDC} multiprocess={args.multi}, verbose={args.verbose}")
+    print(f"{Terminal.DARKGREEN}############################################{Terminal.ENDC}")
     print("N - new chessboard")
     print("C - clear chessboard")
     print("x y - place/remove queen on field (x, y)")
