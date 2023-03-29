@@ -4,7 +4,6 @@ import sys
 from concurrent.futures import ProcessPoolExecutor
 from copy import deepcopy
 from timer import Timer
-from colors import TermC
 
 ####################################
 # Section: chessboard implementation

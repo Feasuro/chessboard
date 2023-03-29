@@ -18,12 +18,10 @@ from chessboard import ChessBoard
 
 class Solution(QListWidgetItem):
     """It is made from list not str and stores it for later use"""
+    def __init__(self, queens: list, *args, **kwargs):
+        super().__init__(str(queens), *args, **kwargs)
 
-    def __init__(self, lst: list, *args, **kwargs):
-        super().__init__(str(lst), *args, **kwargs)
-
-        self.queens = lst[:]
-
+        self.queens = list(queens)
 
 class FieldButton(QAbstractButton):
     """Button that looks like a chessboard field"""
@@ -57,7 +55,7 @@ class FieldButton(QAbstractButton):
         return QSize(36, 36)
 
     def paintEvent(self, event) -> None:
-        #how it actually looks
+        """ Configure how it actually looks. """
         painter = QPainter(self)
         if self.property('color') == 'white':
             painter.setBrush(QBrush(Qt.GlobalColor.white))
@@ -73,7 +71,7 @@ class FieldButton(QAbstractButton):
 
 class Board(QWidget):
     """Widget that stores the chessboard and draws it"""
-
+    
     def __init__(self, dim, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -92,19 +90,19 @@ class Board(QWidget):
         self.setLayout(layout)
 
     def paintEvent(self, event) -> None:
-        #always be square 
+        """ Always stay square. """ 
         self.setFixedWidth(self.height())
         return super().paintEvent(event)
 
     def field_state(self, field):
-        #updates chessboard's state when a field is clicked
+        """ Updates chessboard's state when a field is clicked. """
         if self.chess.place_queen(field):
             self.update_state()
         else:
             QMessageBox.critical(self, 'Forbidden', 'Cannot place Queen here!')
 
     def update_state(self):
-        #redraws icons after underlying chessboard's change
+        """ Redraws icons after underlying chessboard's change. """
         for field in self.chess.board:
             if self.chess.board[field] == 'Q' and self.buttons[field].property('color') == 'white':
                 self.buttons[field].setIcon(QIcon('./resources/chess-queen-bt.png'))
@@ -140,6 +138,7 @@ class MainWindow(QMainWindow):
         self.show()
 
     def ui_setup(self):
+        """ Arranges all window elements. """
         #put chessboard in the center
         self.body = Board(0)
         self.setCentralWidget(self.body)
@@ -156,12 +155,12 @@ class MainWindow(QMainWindow):
 
         #available actions creation and configuration
         self.actions = []
-        for name in ('new', 'clean', 'solve', 'cancel'):
+        for name in ('new', 'clear', 'solve', 'cancel'):
             action = QAction(name.capitalize(), self)
             action.setObjectName(name)
             self.actions.append(action)
         self.actions[0].triggered.connect(self.new_chessboard)
-        self.actions[1].triggered.connect(self.clean_chessboard)
+        self.actions[1].triggered.connect(self.clear_chessboard)
         self.actions[2].triggered.connect(self.solve_chessboard)
         self.actions[3].triggered.connect(self.finish_computation)
         self.actions[3].setDisabled(True)
@@ -186,19 +185,20 @@ class MainWindow(QMainWindow):
         self.statusbar.addPermanentWidget(self.statuslabel)
 
     def new_chessboard(self):
-        #ask user for dimension, clear the solution list and create new chessboard 
+        """ Ask user for dimension, clear the solution list and create new chessboard. """
         dim, ok = QInputDialog.getInt(self, 'New Chessboard', "Provide new chessboard's dimension:")
         if ok :
             self.solutions.clear()
             self.body = Board(dim)
             self.setCentralWidget(self.body)
 
-    def clean_chessboard(self):
-        #clear chessboard and update icons
-        self.body.chess.clean()
+    def clear_chessboard(self):
+        """ Clear chessboard and update icons. """
+        self.body.chess.clear()
         self.body.update_state()
 
     def solve_chessboard(self):
+        """ 'Solve' action handler. """
         #remove previous solutions
         self.solutions.clear()
         #change actions' availability when computations are in progress
@@ -208,20 +208,21 @@ class MainWindow(QMainWindow):
         self.multi.setDisabled(True)
         #pass actual chessboard arrangement as commandline arguments
         M = ['-m'] if self.multi.isChecked() else []
-        self.solver.setArguments(M + ['-d', str(self.body.chess.dim), '-q'] + [str(q) if q else '0' for q in self.body.chess.queens])
+        self.solver.setArguments(M + ['-d', str(self.body.chess.dim), '-q'] + [str(q) if q else 'N' for q in self.body.chess.queens])
         #give some feedback on what is being done
-        print(time.strftime('%x %X'), 'Starting solver process.')
+        print(time.strftime('%x %X'), 'Starting solver process.', file=sys.stderr)
         self.statusbar.showMessage('Computation in progress')
         #fire up the calculations
         self.solver.start()
 
     def finish_computation(self):
+        """ Handle computation finish and user interrupt. """
         #if process is still running cancel it
         if self.solver.state() is not QProcess.ProcessState.NotRunning :
-            print(time.strftime('%x %X'), 'Terminating solver process')
+            print(time.strftime('%x %X'), 'Terminating solver process', file=sys.stderr)
             self.solver.terminate()
         #print some feedback
-        print(time.strftime('%x %X'), 'Solver process stopped:', self.solver.exitStatus())
+        print(time.strftime('%x %X'), 'Solver process stopped:', self.solver.exitStatus(), file=sys.stderr)
         self.statusbar.showMessage('Finished', 4000)
         #restore default actions' availability
         self.multi.setDisabled(False)
@@ -235,27 +236,26 @@ class MainWindow(QMainWindow):
         self.solver.time = '?'
 
     def populate_solutions(self):
-        #read results, reformat and append them to the list
+        """ Read results, reformat and append them to the list. """
         while data := self.solver.readLine() :
             text = str(data).strip("bn[']\\")
             queens = [int(i) for i in text.split(', ')] if text else []
             Solution(queens, self.solutions)
 
     def show_solution(self, solution: Solution):
-        #maps given solution to the current chessboard
-        self.body.chess.clean()
+        """ Maps given solution to the current chessboard. """
+        self.body.chess.clear()
         for field in enumerate(solution.queens, start=1):
             self.body.chess.place_queen(field)
         self.body.update_state()
 
     def handle_stderr(self):
-        #print worker stderr output to terminal, remember running time
+        """ Print worker stderr output to terminal, remember running time. """
         regex = 'Elapsed time: (\d+.\d+e?-?\d*) seconds'
         data = self.solver.readAllStandardError()
         stderr = bytes(data).decode("utf8")
-        print('Debug:', regex, stderr)
         self.solver.time = float( re.search(regex, stderr).group(1) )
-        print(stderr)
+        print(stderr, file=sys.stderr)
 
 
 if __name__ == '__main__':
