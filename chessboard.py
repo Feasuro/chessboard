@@ -4,9 +4,16 @@ import sys
 from concurrent.futures import ProcessPoolExecutor
 from copy import deepcopy
 from timer import Timer
+from colors import TermC
 
 ####################################
 # Section: chessboard implementation
+class Terminal :
+    WHITE = '\033[97m'
+    GREEN = '\033[92m'
+    RED = '\033[91m'
+    ENDC = '\033[0m'
+    CLEAR = '\033c'
 class ChessBoard :
     """ Class implements the N Queens problem.
 
@@ -42,7 +49,7 @@ class ChessBoard :
     def __str__(self) -> str :
         """ Use print() to view chessboard on the screen. """
         # Upper line
-        result = '    '
+        result = Terminal.WHITE + '    '
         for n in range(self.dim) :
             result += '_ '
         result += '\n'
@@ -50,13 +57,17 @@ class ChessBoard :
         for k in range(self.dim, 0, -1) :
             result += f'{k:>2} |'
             for n in range(1, self.dim+1) :
-                result += self.board[n, k] + '|'
+                if self.board[n, k] == 'Q' :
+                    result += Terminal.GREEN
+                elif self.board[n, k] == '+' :
+                    result += Terminal.RED
+                result += self.board[n, k] + Terminal.WHITE + '|'
             result += '\n'
         # Column numeration
         result += '    '
         for n in range(1, self.dim+1) :
             result += f'{n:<2}'
-        result += '\n'
+        result += '\n' + Terminal.ENDC
         return result
 
     def clear(self) -> bool :
@@ -105,10 +116,10 @@ class ChessBoard :
                                 break
                 return True
             else :
-                print('Cannot place Queen here!')
+                print(f'{Terminal.RED}Cannot place Queen here!{Terminal.ENDC}')
                 return False
         else :
-            print('Incorrect field coordinates - out of range.')
+            print(f'{Terminal.RED}Incorrect field coordinates - out of range.{Terminal.ENDC}')
             return False
 
     def solve(self) :
@@ -252,10 +263,10 @@ def command_solve() -> None :
 
 def show() -> None :
     """ Prints help message and current chessboard. """
-    print("\033c", end='')
-    print("############################################")
-    print(f"# multiprocess={args.multi}, verbose={args.verbose}")
-    print("############################################")
+    print(Terminal.CLEAR, end='')
+    print(f"{TermC.DARKGREEN.value}############################################")
+    print(f"#{TermC.ENDC.value} multiprocess={args.multi}, verbose={args.verbose}")
+    print(f"{TermC.DARKGREEN.value}############################################{TermC.ENDC.value}")
     print("N - new chessboard")
     print("C - clear chessboard")
     print("x y - place/remove queen on field (x, y)")
@@ -299,7 +310,7 @@ def main() -> None :
                         show()
                     else:
                         print("Enter command:")
-        
+
 
 if __name__ == '__main__' :
     from argparse import ArgumentParser
