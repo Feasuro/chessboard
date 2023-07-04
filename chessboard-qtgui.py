@@ -254,8 +254,12 @@ class MainWindow(QMainWindow):
         regex = 'Elapsed time: (\d+.\d+e?-?\d*) seconds'
         data = self.solver.readAllStandardError()
         stderr = bytes(data).decode("utf8")
-        self.solver.time = float( re.search(regex, stderr).group(1) )
-        print(stderr, file=sys.stderr)
+        try :
+            self.solver.time = float( re.search(regex, stderr).group(1) )
+        except :
+            pass
+        else :
+            print(stderr, file=sys.stderr)
 
 
 if __name__ == '__main__':
