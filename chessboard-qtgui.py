@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+"""Qt6 graphic user interface for N-queens solver program"""
 
 import re
 import sys
@@ -20,7 +21,6 @@ class Solution(QListWidgetItem):
     """It is made from list not str and stores it for later use"""
     def __init__(self, queens: list, *args, **kwargs):
         super().__init__(str(queens), *args, **kwargs)
-
         self.queens = list(queens)
 
 class FieldButton(QAbstractButton):
@@ -49,9 +49,11 @@ class FieldButton(QAbstractButton):
         self.setSizePolicy(square)
 
     def heightForWidth(self, width: int) -> int:
+        """ Be a square """
         return width
 
     def sizeHint(self):
+        """ Propose a size of an icon """
         return QSize(36, 36)
 
     def paintEvent(self, event) -> None:
@@ -62,16 +64,17 @@ class FieldButton(QAbstractButton):
         elif self.property('color') == 'black':
             painter.setBrush(QBrush(Qt.GlobalColor.black))
         painter.drawRect(QRect(QPoint(0, 0), self.size()))
-        self.icon().paint(painter, int(self.width() / 6), int(self.height() / 6), int(self.width() * 2/3), int(self.height() * 2/3))
+        self.icon().paint(painter, int(self.width() / 6),int(self.height() / 6),
+                          int(self.width() * 2/3), int(self.height() * 2/3))
 
     @Slot()
     def on_click(self):
+        """ Make this signal emit coordinates """
         self.click.emit((self.col, self.row))
 
 
 class Board(QWidget):
     """Widget that stores the chessboard and draws it"""
-    
     def __init__(self, dim, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -119,20 +122,17 @@ class MainWindow(QMainWindow):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-
         #size and title bar
         self.setWindowTitle('N-Queens solver')
         self.setWindowIcon(QIcon('./resources/chess-queen-wt.png'))
         self.setGeometry(100,100,700,500)
-
         #setup control of worker proces for computation
         self.solver = QProcess()
-        self.solver.setProgram('./chessboard.py')
+        self.solver.setProgram('./solver.py')
         self.solver.finished.connect(self.finish_computation)
         self.solver.readyReadStandardOutput.connect(self.populate_solutions)
         self.solver.readyReadStandardError.connect(self.handle_stderr)
         self.solver.time = '?'
-
         #make the window and show it
         self.ui_setup()
         self.show()
@@ -142,7 +142,6 @@ class MainWindow(QMainWindow):
         #put chessboard in the center
         self.body = Board(0)
         self.setCentralWidget(self.body)
-
         #list of solutions in dock widget
         self.solutions = QListWidget()
         self.solutions.itemDoubleClicked.connect(self.show_solution)
@@ -152,7 +151,6 @@ class MainWindow(QMainWindow):
         dock.setMaximumWidth(250)
         dock.setWidget(self.solutions)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, dock)
-
         #available actions creation and configuration
         self.actions = []
         for name in ('new', 'clear', 'solve', 'cancel'):
@@ -165,7 +163,6 @@ class MainWindow(QMainWindow):
         self.actions[3].triggered.connect(self.finish_computation)
         self.actions[3].setDisabled(True)
         self.multi = QCheckBox('Multiprocess solving', self)
-
         #toolbar arrangement and styling
         toolbar = QToolBar()
         toolbar.addAction(self.actions[0])
@@ -178,7 +175,6 @@ class MainWindow(QMainWindow):
             toolbar.widgetForAction(a).setObjectName(a.objectName())
         toolbar.setStyleSheet( " QToolButton#cancel::enabled { color: red; } " )
         self.addToolBar(toolbar)
-
         #statusbar setup
         self.statusbar = self.statusBar()
         self.statuslabel = QLabel('0 known solutions')

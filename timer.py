@@ -1,16 +1,20 @@
 #!/usr/bin/env python
+"""Simple timer as context manager module""" 
 
 from time import perf_counter
 
 class Timer:
+    """Class implements context manager timer"""
     def __init__(self):
+        self.start = 0
+        self.stop = 0
         self.elapsed = 0
 
     def __enter__(self):
         self.start = perf_counter()
         return self
 
-    def __exit__(self, exc_type, exc_value, exc_traceback):
+    def __exit__(self, error, message, traceback):
         self.stop = perf_counter()
         self.elapsed = self.stop - self.start
         return False
