@@ -4,7 +4,7 @@
 import sys
 from concurrent.futures import ProcessPoolExecutor
 from argparse import ArgumentParser
-from timer import Timer
+from codetiming import Timer
 
 def valid(queens: list, col: int) -> bool :
     """ Checks if in column 'col' queen is placed properly. """
@@ -75,8 +75,8 @@ if __name__ == '__main__' :
     parser = ArgumentParser(
             description="Calculate solutions of the n-queens problem.",
             epilog="""
-        Either use interactive mode (without commandline arguments),
-        or provide (at least) dimension of chessboard to solve.
+        Example: [1, None, None, None] represents 4x4 chessboard with one queen in bottom left corner.
+        To solve call solver.py -d 4 -q 1
         """)
     parser.add_argument('-d', '--dim', required=True, type=dimension, help="Chessboard's dimension")
     parser.add_argument('-q', '--queens', nargs='*', type=coordinate, default=[],
@@ -87,6 +87,5 @@ if __name__ == '__main__' :
 
     if input_check(args.dim, args.queens) :
         solver = multi_solve if args.multi else basic_solve
-        with Timer() as timer :
+        with Timer(logger=lambda x: print(x, file=sys.stderr)) as timer :
             solver( args.queens )
-        print(f"Elapsed time: {timer.elapsed} seconds", file=sys.stderr)

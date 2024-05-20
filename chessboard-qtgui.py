@@ -227,8 +227,7 @@ class MainWindow(QMainWindow):
         self.actions[3].setDisabled(True)
         #display a summary messages
         self.statuslabel.setText(f'{self.solutions.count()} known solutions')
-        seconds = round(self.solver.time, 2) if isinstance(self.solver.time, float) else self.solver.time
-        QMessageBox.information(self, 'Solved', f'Found {self.solutions.count()} solutions in {seconds} seconds.')
+        QMessageBox.information(self, 'Solved', f'Found {self.solutions.count()} solutions in {self.solver.time} seconds.')
         self.solver.time = '?'
 
     def populate_solutions(self):

@@ -3,7 +3,7 @@
 
 from concurrent.futures import ProcessPoolExecutor
 from copy import deepcopy
-from timer import Timer
+from codetiming import Timer
 import solver
 
 class Terminal :
@@ -12,7 +12,7 @@ class Terminal :
     GREEN = '\033[92m'
     DARKGREEN = '\033[32m'
     RED = '\033[91m'
-    ENDC = '\033[0m'
+    ENDCOLOR = '\033[0m'
     CLEAR = '\033c'
 
 ####################################
@@ -70,7 +70,7 @@ class ChessBoard :
         result += '    '
         for n in range(1, self.dim+1) :
             result += f'{n:<2}'
-        result += '\n' + Terminal.ENDC
+        result += '\n' + Terminal.ENDCOLOR
         return result
 
     def clear(self) -> bool :
@@ -120,10 +120,10 @@ class ChessBoard :
                                 break
                 return True
             else :
-                print(f'{Terminal.RED}Cannot place Queen here!{Terminal.ENDC}')
+                print(f'{Terminal.RED}Cannot place Queen here!{Terminal.ENDCOLOR}')
                 return False
         else :
-            print(f'{Terminal.RED}Incorrect field coordinates - out of range.{Terminal.ENDC}')
+            print(f'{Terminal.RED}Incorrect field coordinates - out of range.{Terminal.ENDCOLOR}')
             return False
 
     def solve(self) :
@@ -196,16 +196,15 @@ def command_solve() -> None :
         solver_method = solver.multi_solve if multi else solver.basic_solve
         input_method = myboard.queens
 
-    with Timer() as timer :
+    with Timer(logger=lambda x: print(x, file=sys.stderr)) as timer :
         solver_method( input_method )
-    print(f"Elapsed time: {timer.elapsed} seconds")
 
 def show() -> None :
     """ Prints help message and current chessboard. """
     print(Terminal.CLEAR, end='')
     print(f"{Terminal.DARKGREEN}############################################")
-    print(f"#{Terminal.ENDC} multiprocess={multi}, verbose={verbose}")
-    print(f"{Terminal.DARKGREEN}############################################{Terminal.ENDC}")
+    print(f"#{Terminal.ENDCOLOR} multiprocess={multi}, verbose={verbose}")
+    print(f"{Terminal.DARKGREEN}############################################{Terminal.ENDCOLOR}")
     print("N - new chessboard")
     print("C - clear chessboard")
     print("x y - place/remove queen on field (x, y)")

@@ -1,6 +1,5 @@
 __all__ = [
     'solver',
     'chessboard',
-    'chessboard-qtgui',
-    'timer'
+    'chessboard-qtgui'
 ]
