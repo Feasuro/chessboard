@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 """N-queens program logic and CLI"""
 
+import sys
 from concurrent.futures import ProcessPoolExecutor
 from copy import deepcopy
 from codetiming import Timer

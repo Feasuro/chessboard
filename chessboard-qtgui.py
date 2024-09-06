@@ -246,7 +246,7 @@ class MainWindow(QMainWindow):
 
     def handle_stderr(self):
         """ Print worker stderr output to terminal, remember running time. """
-        regex = 'Elapsed time: (\d+.\d+e?-?\d*) seconds'
+        regex = r'Elapsed time: (\d+.\d+e?-?\d*) seconds'
         data = self.solver.readAllStandardError()
         stderr = bytes(data).decode("utf8")
         try :
