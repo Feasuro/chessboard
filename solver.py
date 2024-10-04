@@ -4,6 +4,7 @@
 import sys
 from concurrent.futures import ProcessPoolExecutor
 from argparse import ArgumentParser
+
 from codetiming import Timer
 
 def valid(queens: list, col: int) -> bool :
@@ -43,31 +44,29 @@ def multi_solve(queens: list, col=0) -> None :
 
 def dimension(x) -> int :
     """ Turns input into proper dimension or throws an error. """
-    if int(x) >= 0 :
-        return int(x)
-    else :
-        raise ValueError("Chessboard's dimension can't be negative!")
+    if (n := int(x)) >= 0 :
+        return n
+    raise ValueError("Chessboard's dimension must be a non-negative integer!")
 
 def coordinate(x: str) -> int | None:
     """ Turns input into proper coordinate or throws an error. """
     if x in ['N', 'n', 'None', None] :
         return None
-    elif int(x) == 0 :
+    if (n := int(x)) == 0 :
         return None
-    elif int(x) > 0 :
-        return int(x)
-    else :
-        raise ValueError(f"Invalid coordinate value {x}")
+    if n > 0 :
+        return n
+    raise ValueError(f"Invalid coordinate value {x}")
 
 def input_check(dim, queens) -> bool :
     """ Checks if provided queens setup is correct given chessboard's dimension. """
-    queens += [None] * (dim - len(queens))
     if len(queens) > dim :
         raise ValueError(f"Too many columns given for dimension={dim}")
+    queens += [None] * (dim - len(queens))
     for i, q in enumerate(queens) :
         if isinstance(q, int) and q > dim :
             raise ValueError(f"Coordinate {q} exceeds dimension={dim}")
-        elif not valid(queens, i) :
+        if not valid(queens, i) :
             raise ValueError("Initial setup is invalid. Queens cannot attack each other")
     return True
 
@@ -86,6 +85,6 @@ if __name__ == '__main__' :
     args = parser.parse_args()
 
     if input_check(args.dim, args.queens) :
-        solver = multi_solve if args.multi else basic_solve
-        with Timer(logger=lambda x: print(x, file=sys.stderr)) as timer :
-            solver( args.queens )
+        solve = multi_solve if args.multi else basic_solve
+        with Timer(logger=lambda x: print(x, file=sys.stderr)):
+            solve( args.queens )
