@@ -1,0 +1,11 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource prefix="i18n">
+        <file>queens_pl.qm</file>
+    </qresource>
+    <qresource prefix="icons">
+        <file alias="qblack">chess-queen-bt.png</file>
+        <file alias="qwhite">chess-queen-wt.png</file>
+        <file alias="cross">cross.png</file>
+    </qresource>
+</RCC>
